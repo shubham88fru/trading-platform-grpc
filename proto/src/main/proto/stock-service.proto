@@ -6,7 +6,7 @@ import "google/protobuf/empty.proto";
 import "common/common.proto";
 
 option java_multiple_files = true;
-option java_package = "com.vinsguru.stock";
+option java_package = "com.learning.stock";
 
 message PriceUpdate {
   common.Ticker ticker = 1;
