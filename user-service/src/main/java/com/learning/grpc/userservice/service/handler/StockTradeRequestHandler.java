@@ -1,8 +1,10 @@
 package com.learning.grpc.userservice.service.handler;
 
 import com.learning.common.Ticker;
+import com.learning.grpc.userservice.entity.PortfolioItem;
 import com.learning.grpc.userservice.entity.User;
 import com.learning.grpc.userservice.exception.InsufficientBalanceException;
+import com.learning.grpc.userservice.exception.InsufficientSharesException;
 import com.learning.grpc.userservice.exception.UnknownTickerException;
 import com.learning.grpc.userservice.exception.UnknownUserException;
 import com.learning.grpc.userservice.repository.PortfolioItemRepository;
@@ -41,6 +43,27 @@ public class StockTradeRequestHandler {
                         item -> item.setQuantity(item.getQuantity() + stockTradeRequest.getQuantity()),
                         () -> portfolioItemRepository.save(EntityMessageMapper.toPortfolioItem(stockTradeRequest))
                 );
+
+        return EntityMessageMapper.toStockTradeResponse(stockTradeRequest, user.getBalance());
+    }
+
+    @Transactional
+    public StockTradeResponse sellStock(StockTradeRequest stockTradeRequest) {
+        //validate
+        this.validateTicker(stockTradeRequest.getTicker());
+        User user = this.userRepository
+                .findById(stockTradeRequest.getUserId())
+                .orElseThrow(() -> new UnknownUserException(stockTradeRequest.getUserId()));
+        PortfolioItem portfolioItem = this.portfolioItemRepository
+                .findByUserIdAndTicker(user.getId(), stockTradeRequest.getTicker())
+                .filter(pi -> pi.getQuantity() >= stockTradeRequest.getQuantity())
+                .orElseThrow(() -> new InsufficientSharesException(user.getId()));
+
+        int totalPrice = stockTradeRequest.getQuantity() * stockTradeRequest.getPrice();
+
+        //valid request here.
+        user.setBalance(user.getBalance() + totalPrice);
+        portfolioItem.setQuantity(portfolioItem.getQuantity() - stockTradeRequest.getQuantity());
 
         return EntityMessageMapper.toStockTradeResponse(stockTradeRequest, user.getBalance());
     }
