@@ -1,4 +1,4 @@
-package com.learning.grpc.aggregatorservice.advice;
+package com.learning.grpc.aggregatorservice.controller.advice;
 
 import io.grpc.StatusRuntimeException;
 import org.springframework.http.HttpStatus;
