@@ -1,7 +1,11 @@
 package com.learning.grpc.aggregatorservice;
 
+import com.learning.common.Ticker;
 import com.learning.grpc.aggregatorservice.mockservice.StockMockService;
 import com.learning.grpc.aggregatorservice.mockservice.UserMockService;
+import com.learning.user.StockTradeRequest;
+import com.learning.user.StockTradeResponse;
+import com.learning.user.TradeAction;
 import com.learning.user.UserInformation;
 import net.devh.boot.grpc.server.service.GrpcService;
 import org.junit.jupiter.api.Assertions;
@@ -23,6 +27,7 @@ import org.springframework.http.ResponseEntity;
 public class UserTradeTest {
 
     private static final String USER_INFORMATION_ENDPOINT = "http://localhost:%d/user/%d";
+    private static final String TRADE_ENDPOINT = "http://localhost:%d/trade";
 
     @LocalServerPort
     private int port;
@@ -41,6 +46,43 @@ public class UserTradeTest {
         Assertions.assertEquals(1, userInformation.getUserId());
         Assertions.assertEquals("integration-test", userInformation.getName());
         Assertions.assertEquals(100, userInformation.getBalance());
+
+    }
+
+    @Test
+    public void unknownUserTest() {
+        String url = USER_INFORMATION_ENDPOINT.formatted(port, 2);
+        var response = restTemplate.getForEntity(url, UserInformation.class);
+        Assertions.assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+
+        UserInformation userInformation = response.getBody();
+        Assertions.assertNull(userInformation);
+
+    }
+
+    @Test
+    public void tradeTest() {
+        StockTradeRequest tradeRequest = StockTradeRequest.newBuilder()
+                .setUserId(1)
+                .setPrice(10)
+                .setTicker(Ticker.AMAZON)
+                .setAction(TradeAction.BUY)
+                .setQuantity(2)
+                .build();
+
+        String url = TRADE_ENDPOINT.formatted(port);
+        ResponseEntity<StockTradeResponse> response =
+                restTemplate.postForEntity(url, tradeRequest, StockTradeResponse.class);
+
+        Assertions.assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        StockTradeResponse tradeResponse = response.getBody();
+        Assertions.assertNotNull(tradeResponse);
+        Assertions.assertEquals(Ticker.AMAZON, tradeResponse.getTicker());
+        Assertions.assertEquals(1, tradeResponse.getUserId());
+        Assertions.assertEquals(15, tradeResponse.getPrice());
+        Assertions.assertEquals(1000, tradeResponse.getTotalPrice());
+        Assertions.assertEquals(0, tradeResponse.getBalance());
 
     }
 

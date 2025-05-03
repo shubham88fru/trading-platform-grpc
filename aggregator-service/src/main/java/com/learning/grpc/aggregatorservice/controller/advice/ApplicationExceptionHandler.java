@@ -14,7 +14,7 @@ public class ApplicationExceptionHandler {
         return switch (e.getStatus().getCode()) {
             case INVALID_ARGUMENT, FAILED_PRECONDITION ->
                     ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-            case NOT_FOUND -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+            case NOT_FOUND -> ResponseEntity.notFound().build();
             default -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         };
     }
